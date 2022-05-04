@@ -1,25 +1,61 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { ApiProvider } from '@reduxjs/toolkit/dist/query/react';
+import React, { useCallback, useRef } from 'react';
+import { todoApi, Todo } from './store';
 
-function App() {
+function TodoApp() {
+  const { data: todos } = todoApi.useGetAllQuery();
+  const [updateTodo] = todoApi.useUpdateTodoMutation();
+  const [deleteTodo] = todoApi.useDeleteTodoMutation();
+  const [addTodo] = todoApi.useAddTodoMutation();
+
+  const onToggle = useCallback(
+    (todo: Todo) =>
+      updateTodo({ ...todo, done: !todo.done }),
+    [updateTodo]
+  );
+
+  const onDelete = useCallback(
+    (todo: Todo) => deleteTodo(todo),
+    [deleteTodo]
+  );
+
+  const textRef = useRef<HTMLInputElement>(null);
+
+  const onAdd = useCallback(
+    () => addTodo(textRef.current!.value ?? ''),
+    [addTodo]
+  );
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {todos?.map((todo) => (
+        <React.Fragment key={todo.id}>
+          <div>
+            <input
+              type="checkbox"
+              checked={todo.done}
+              onChange={() => onToggle(todo)}
+            />
+            <span>{todo.text}</span>
+          </div>
+          <button onClick={() => onDelete(todo)}>
+            Delete
+          </button>
+        </React.Fragment>
+      ))}
+      <div className="add">
+        <input type="text" ref={textRef} />
+        <button onClick={onAdd}>Add</button>
+      </div>
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <ApiProvider api={todoApi}>
+      <TodoApp />
+    </ApiProvider>
   );
 }
 
